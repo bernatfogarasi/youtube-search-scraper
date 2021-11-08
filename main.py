@@ -1,27 +1,18 @@
 import requests
-from bs4 import BeautifulSoup
 import json
 import yaml
 
-def print_json(data):
-    print(json.dumps(data, indent=4))
-
 def search(text):
     words = "+".join(text.split())
-    response = requests.get(f"https://www.youtube.com/results?search_query={words}&sp=EgIQAQ%253D%253D")
-    return response.text
-
-def read(name):
-    with open(name, "r", encoding="utf-8") as file:
-        return file.read()
+    url = f"https://www.youtube.com/results?search_query={words}&sp=EgIQAQ%253D%253D"
+    response = requests.get(url)
+    return [get_video(video) for video in get_videos(get_json(response.text))]
 
 def get_json(html):
     START_TEXT = "var ytInitialData = "
     END_TEXT = "</script>"
-    start_index = html.find(START_TEXT)
-    reduced_html = html[start_index + len(START_TEXT):]
-    end_index = reduced_html.find(END_TEXT)
-    json_text = reduced_html[:end_index].strip()[:-1]
+    reduced_html = html[html.find(START_TEXT) + len(START_TEXT):]
+    json_text = reduced_html[:reduced_html.find(END_TEXT)].strip()[:-1]
     return yaml.load(json_text, Loader=yaml.FullLoader)
 
 def get_videos(data):
@@ -31,7 +22,7 @@ def get_videos(data):
 
 def get_video(data):
     data = data["videoRenderer"]
-    return {
+    video = {
         "id": data["videoId"],
         "title": data["title"]["runs"][0]["text"],
         "thumbnail": data["thumbnail"]["thumbnails"][-1]["url"],
@@ -42,16 +33,15 @@ def get_video(data):
         }
 
     }
+    video["url"] = f"https://www.youtube.com/watch?v={video['id']}"
+    video["channel"]["url"] = f"https://www.youtube.com/channel/{video['channel']['id']}"
+    return video
+
+def print_json(data):
+    print(json.dumps(data, indent=4))
 
 def main():
-    html = search("hear me now")
-    data = get_json(html)
-    videos = get_videos(data)
-    print(len(videos))
-    results = []
-    for video in videos:
-        video = get_video(video)
-        results.append(video)
+    results = search("house music")
     print_json(results)
     return results
 
