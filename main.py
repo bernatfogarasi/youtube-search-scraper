@@ -6,7 +6,15 @@ def search(text):
     words = "+".join(text.split())
     url = f"https://www.youtube.com/results?search_query={words}&sp=EgIQAQ%253D%253D"
     response = requests.get(url)
-    return [get_video(video) for video in get_videos(get_json(response.text))]
+    response_json = get_json(response.text)
+    write_json("response", response_json)
+    videos = get_videos(response_json)
+    return
+    return [get_video(video) for video in videos]
+
+def write_json(file, data):
+    with open(f"{file}.json", "w") as file:
+        file.write(json.dumps(data, indent=4))
 
 def get_json(html):
     START_TEXT = "var ytInitialData = "
@@ -41,7 +49,7 @@ def print_json(data):
     print(json.dumps(data, indent=4))
 
 def main():
-    results = search("house music")
+    results = search("ahefao   esfbfalsbdvakdsfabsdff")
     print_json(results)
     return results
 
